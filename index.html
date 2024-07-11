@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Snake on a Torus</title>
+        <link rel="stylesheet" href="style.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+    </head>
+
+    <body>
+        <script type="x-shader/x-vertex" class="sky vertex-shader">
+            #version 100
+            precision highp float;
+
+            uniform mat4 viewMatrix;
+            uniform mat4 projMatrix;
+
+            attribute vec3 direction;
+
+            varying vec3 rayDir;
+
+            void main() {
+                rayDir = direction;
+                gl_Position = (projMatrix * vec4((viewMatrix * vec4(direction, 0.0)).xyz, 1.0)).xyww;
+            }
+        </script>
+
+        <script type="x-shader/x-fragment" class="sky fragment-shader">
+            #version 100
+            precision mediump float;
+
+            uniform samplerCube envMap;
+
+            varying vec3 rayDir;
+
+            void main() {
+                gl_FragColor = textureCube(envMap, rayDir);
+            }
+        </script>
+
+        <script type="x-shader/x-vertex" class="torus vertex-shader">
+            #version 100
+            precision highp float;
+
+            uniform mat4 modelMatrix;
+            uniform mat4 viewMatrix;
+            uniform mat4 projMatrix;
+
+            attribute vec3 vertexPosition;
+            attribute vec3 vertexNormal;
+            attribute vec2 vertexUv;
+
+            varying vec3 position;
+            varying vec3 normal;
+            varying vec2 uv;
+
+            void main() {
+                vec4 worldSpacePosition = modelMatrix * vec4(vertexPosition, 1.0);
+                position = worldSpacePosition.xyz;
+                gl_Position = projMatrix * viewMatrix * worldSpacePosition;
+                normal = (modelMatrix * vec4(vertexNormal, 0.0)).xyz;
+                uv = vertexUv;
+            }
+        </script>
+
+        <script type="x-shader/x-fragment" class="torus fragment-shader">
+            #version 100
+            precision mediump float;
+
+            uniform sampler2D torusTexture;
+
+            varying vec3 position;
+            varying vec3 normal;
+            varying vec2 uv;
+
+            void main() {
+                gl_FragColor = texture2D(torusTexture, uv);
+                vec3 lightDir = normalize(vec3(10.0) - position);
+                float lighting = max(0.1, dot(lightDir, normal));
+                gl_FragColor.rgb *= mix(1.0, lighting, gl_FragColor.b);
+            }
+        </script>
+
+        <img class="sky texture" src="stars.png" style="display: none;">
+        <canvas id="viewport">Your browser doesn't support HTML5 canvases :(</canvas>
+        <canvas id="hud">Your browser doesn't support HTML5 canvases :(</canvas>
+        <script src="script.js"></script>
+        <noscript>
+            Unable to run JavaScript :(
+            Maybe you need to enable it in your browser settings?
+        </noscript>
+    </body>
+</html>
